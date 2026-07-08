@@ -88,7 +88,8 @@ val_data = train_datagen.flow_from_directory(
 """# Using sequential model:"""
 
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(299, 299, 3)),
+    tf.keras.layers.Input(shape=(299, 299, 3)),
+    tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
     tf.keras.layers.MaxPooling2D(2, 2),
 
     tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
@@ -112,7 +113,7 @@ model.summary()
 
 # Compiling model with 'adam' optimizer loss function 'binary_crossentropy'
 model.compile(loss='binary_crossentropy',
-              optimizer=tf.optimizers.Adam(),
+              optimizer=tf.keras.optimizers.Adam(),
               metrics=['accuracy']
              )
 
