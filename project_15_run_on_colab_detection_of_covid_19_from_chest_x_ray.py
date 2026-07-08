@@ -35,27 +35,17 @@ import matplotlib.pyplot as plt
 
 ! unzip /content/covid19-chest-xray-image-dataset.zip
 
-BASIS_DIR = '/content/dataset'
-CLASSES = ["covid",  "normal"]
+import os
 
-"""## Method No 2: Data ingest using Google Drive"""
+# Dynamically set BASIS_DIR using relative paths
+if os.path.exists('dataset'):
+    BASIS_DIR = 'dataset'
+elif os.path.exists('COVID_CHEST_XRAY'):
+    BASIS_DIR = 'COVID_CHEST_XRAY'
+else:
+    BASIS_DIR = './dataset'
 
-from google.colab import drive
-drive.mount('/content/drive')
-
-BASIS_DIR = '/content/drive/MyDrive/dataset '
-CLASSES = ["covid",  "normal"]
-
-"""# Method No 3: Data ingest using Direct method"""
-
-BASIS_DIR = '/content/sample_data/dataset method 3'
-CLASSES = ["covid",  "normal"]
-
-"""# Method No 4: Data ingest using Local on-premises"""
-
-# COVID and Normal dataset directory
-BASIS_DIR = 'D:/DataSet/COVID_CHEST_XRAY'
-classes=["COVID_",  "Normal_"]
+CLASSES = ["covid", "normal"]
 
 """# Image augmentation process:"""
 
@@ -150,10 +140,10 @@ plt.xlabel('Epoch')
 plt.legend(loc=0)
 plt.show()
 
-import tensorflow as tf
-from tensorflow.keras.models import save_model
-# Save the compiled model to an H5 file
-save_model(model, 'model.h5')
+# Save the compiled model in both native Keras format and legacy H5 format
+model.save('model.keras')
+model.save('model.h5')
+print("Model saved successfully as model.keras and model.h5")
 
 """# Test random image"""
 
@@ -163,23 +153,43 @@ from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
 
 # Assuming you have a pre-trained model saved as 'your_model.h5'
-model = load_model('/content/model.h5')
+# Check for saved model
+if os.path.exists('model.keras'):
+    model = load_model('model.keras')
+    print("Loaded model.keras")
+elif os.path.exists('model.h5'):
+    model = load_model('model.h5')
+    print("Loaded model.h5")
+else:
+    print("No model file found to load.")
 
-path = "/content/dataset/normal/IM-0379-0001.jpeg"
-img = image.load_img(path, target_size=(299, 299))
-img_array = image.img_to_array(img) / 255.0
-img_array = np.expand_dims(img_array, axis=0)
+# Dynamically look for any chest X-ray image in the dataset folder for testing
+path = None
+for root, dirs, files in os.walk(BASIS_DIR):
+    for file in files:
+        if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+            path = os.path.join(root, file)
+            break
+    if path:
+        break
 
-result = model.predict(img_array)
+if path:
+    img = image.load_img(path, target_size=(299, 299))
+    img_array = image.img_to_array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
-# Assuming your model output has two classes (COVID and Normal)
-threshold = 0.5
-prediction = "COVID" if result[0][0] > threshold else "NORMAL"
-print(prediction)
+    result = model.predict(img_array)
 
-# Display the image
-plt.imshow(img)
-plt.title(f"Prediction: {prediction}")
-plt.axis('off')  # Hide the axes
-plt.show()
+    # Assuming your model output has two classes (COVID and Normal)
+    threshold = 0.5
+    prediction = "COVID" if result[0][0] > threshold else "NORMAL"
+    print(f"Sample prediction for {path}: {prediction}")
+
+    # Display the image
+    plt.imshow(img)
+    plt.title(f"Prediction: {prediction}")
+    plt.axis('off')  # Hide the axes
+    plt.show()
+else:
+    print("No sample images found in dataset directory for testing.")
 
